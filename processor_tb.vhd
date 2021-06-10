@@ -128,6 +128,3 @@ begin
 	end process;  	 
 
 end processor_tb_arq;
-
-
-end testbench_for_procesador;

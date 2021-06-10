@@ -94,6 +94,7 @@ architecture processor_arq of processor is
     signal ex_mem_ctrl_MemWrite: std_logic;
     signal ex_mem_ctrl_Branch: std_logic;   
     signal ex_mem_ctrl_Zero: std_logic;
+    signal ex_mem_ctrl_MemToReg: std_logic;
     
     signal ex_mem_branch, ex_mem_alu_out, ex_mem_wr_data: std_logic_vector(31 downto 0);
     signal ex_mem_wr_reg: std_logic_vector(4 downto 0);
@@ -125,6 +126,17 @@ architecture processor_arq of processor is
     signal ex_mux_alu_out: std_logic_vector(31 downto 0);
     --Fin Mux ALU
     
+    
+    --Seniales Cuarta Etapa
+    
+    --MEM/WB Reg Seg
+    signal mem_wb_ctrl_RegWrite: std_logic;
+    signal mem_wb_ctrl_MemToReg: std_logic;
+    
+    signal mem_wb_data_out: std_logic_vector(31 downto 0);
+    signal mem_wb_alu_out: std_logic_vector(31 downto 0);
+    signal mem_wb_wr_reg: std_logic_vector(4 downto 0);
+    
 begin
     --Instanciacion banco de registros
     banco_registros_inst : banco_registros
@@ -152,6 +164,7 @@ begin
             zero => ex_ALU_zero
             );
      --Fin instanciacion ALU
+
 
 	--Primera Etapa
 	
@@ -335,6 +348,7 @@ begin
     
     --Fin Segunda Etapa
     
+    
     --Tercera Etapa
     
     --ALU Control
@@ -411,6 +425,7 @@ begin
             ex_mem_ctrl_MemWrite <= '0';
             ex_mem_ctrl_Branch <= '0';  
             ex_mem_ctrl_Zero <= '0';
+            ex_mem_ctrl_MemToReg <= '0';
     
             ex_mem_branch <= (others => '0');
             ex_mem_alu_out <= (others => '0');
@@ -423,6 +438,7 @@ begin
             ex_mem_ctrl_MemWrite <= id_ex_ctrl_MemWrite;
             ex_mem_ctrl_Branch <= id_ex_ctrl_Branch;  
             ex_mem_ctrl_Zero <= ex_ALU_zero;
+            ex_mem_ctrl_MemToReg <= id_ex_ctrl_MemToReg;
     
             ex_mem_branch <= ex_add_branch;
             ex_mem_alu_out <= ex_ALU_result;
@@ -430,5 +446,70 @@ begin
             ex_mem_wr_reg <= ex_mux_reg_out;
         end if;
     end process;
- 
+    
+    --Fin Tercera Etapa
+    
+    
+    --Cuarta Etapa
+    
+    --AND para selector de Mux de 1ra Etapa
+    if_sel_mux <= ex_mem_ctrl_Branch and ex_mem_ctrl_Zero;
+    
+    --Dirección de la mem
+    D_Addr <= ex_mem_alu_out;
+    
+    --Senial de escritura de la mem
+    D_WrStb <= ex_mem_ctrl_MemWrite;
+    
+    --Senial de lectura de la mem
+    D_RdStb <= ex_mem_ctrl_MemRead;
+    
+    --WriteData de la mem
+    D_DataOut <= ex_mem_wr_data;
+    
+    
+    --MEM/WB Registro segmentacion
+    MEM_WB_Seg: process (Clk, Reset)
+    begin
+        if (Reset = '1') then
+            mem_wb_ctrl_RegWrite <= '0';
+            mem_wb_ctrl_MemToReg <= '0';
+    
+            mem_wb_data_out <= (others => '0');
+            mem_wb_alu_out <= (others => '0');
+            mem_wb_wr_reg <= (others => '0');
+                        
+        elsif rising_edge(Clk) then
+            mem_wb_ctrl_RegWrite <= ex_mem_ctrl_RegWrite;
+            mem_wb_ctrl_MemToReg <= ex_mem_ctrl_MemToReg;
+    
+            mem_wb_data_out <= D_DataIn;
+            mem_wb_alu_out <= ex_mem_alu_out;
+            mem_wb_wr_reg <= ex_mem_wr_reg;
+        end if;
+    end process;
+    
+    --Fin Cuarta Etapa
+    
+    
+    --Quinta Etapa
+    
+    --Mux
+    WB_Mux: process (mem_wb_ctrl_MemToReg)
+    begin
+        if(mem_wb_ctrl_MemToReg = '0') then               --Si selector = 0
+            id_breg_data_wr <= mem_wb_alu_out;                   --toma el valor de salida de ALU
+        elsif(mem_wb_ctrl_MemToReg = '1') then            --Si selector = 1
+            id_breg_data_wr <= mem_wb_data_out;                  --toma el valor de memoria
+        end if;
+    end process;
+    
+    --Senial de habilitación del BancoReg
+    id_breg_wr_enable <= mem_wb_ctrl_RegWrite;
+    
+    --Dirección de escritura de BancoReg
+    id_breg_reg_wr <= mem_wb_wr_reg;
+    
+    --Fin Quinta Etapa
+    
 end processor_arq;
