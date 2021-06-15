@@ -26,110 +26,111 @@ architecture processor_arq of processor is
 
     component Registers
     port(
-        reg1_rd, reg2_rd, reg_wr : in STD_LOGIC_VECTOR(4 downto 0);
-        data_wr : in STD_LOGIC_VECTOR (31 downto 0);
-        clk, reset, wr : in STD_LOGIC;
-        data1_rd, data2_rd : out STD_LOGIC_VECTOR (31 downto 0)
+        reg1_rd, reg2_rd, reg_wr                : in STD_LOGIC_VECTOR(4 downto 0);
+        data_wr                                 : in STD_LOGIC_VECTOR (31 downto 0);
+        clk, reset, wr                          : in STD_LOGIC;
+        data1_rd, data2_rd                      : out STD_LOGIC_VECTOR (31 downto 0)
         );
     end component;
     
     --Seniales del banco de registro de ID
-    signal id_breg_data_wr: std_logic_vector(31 downto 0);
-    signal id_breg_data1_rd, id_breg_data2_rd: std_logic_vector(31 downto 0);
+    signal id_breg_data_wr                      : std_logic_vector(31 downto 0);
+    signal id_breg_data1_rd, id_breg_data2_rd   : std_logic_vector(31 downto 0);
 	--Fin seniales del banco de registro
 	
 	
-    signal if_pc_out: std_logic_vector(31 downto 0);        --Salida PC
+    signal if_pc_out         : std_logic_vector(31 downto 0);   --Salida PC
     
-    signal if_pc_4: std_logic_vector(31 downto 0);          --Salida Adder
+    signal if_pc_4           : std_logic_vector(31 downto 0);   --Salida Adder
     
-    signal if_sel_mux: std_logic;                           --Selector mux
-    signal if_mux_out: std_logic_vector(31 downto 0);       --Salida mux
+    signal if_sel_mux        : std_logic;                       --Selector mux
+    signal if_mux_out        : std_logic_vector(31 downto 0);   --Salida mux
     
-    signal if_id_pc_4_out: std_logic_vector(31 downto 0);   --Salida registro segmentacion para Adder
-    signal if_id_inst_out: std_logic_vector(31 downto 0);   --Salida registro segmentacion para Instrucc mem
+    signal if_id_pc_4_out    : std_logic_vector(31 downto 0);   --Salida registro segmentacion para Adder
+    signal if_id_inst_out    : std_logic_vector(31 downto 0);   --Salida registro segmentacion para Instrucc mem
     
     --Seniales Unidad de Control
-    signal RegDst: std_logic;
-    signal ALUSrc: std_logic;
-    signal MemtoReg: std_logic;
-    signal RegWrite: std_logic;
-    signal MemRead: std_logic;
-    signal MemWrite: std_logic;
-    signal Branch: std_logic;
-    signal AluOp: std_logic_vector(2 downto 0);
+    signal RegDst            : std_logic;
+    signal ALUSrc            : std_logic;
+    signal MemtoReg          : std_logic;
+    signal RegWrite          : std_logic;
+    signal MemRead           : std_logic;
+    signal MemWrite          : std_logic;
+    signal Branch            : std_logic;
+    signal AluOp             : std_logic_vector(2 downto 0);
     --Fin seniales Unidad de Control
     
     --Seniales Sign Extended
-    signal id_sign_ext_out: std_logic_vector(31 downto 0);
+    signal id_sign_ext_out            : std_logic_vector(31 downto 0);
     --Fin seniales Sign Extended
     
     --ID/EX Reg segmentacion
-    signal id_ex_ctrl_RegDst: std_logic;
-    signal id_ex_ctrl_ALUSrc: std_logic;
-    signal id_ex_ctrl_MemtoReg: std_logic;
-    signal id_ex_ctrl_RegWrite: std_logic;
-    signal id_ex_ctrl_MemRead: std_logic;
-    signal id_ex_ctrl_MemWrite: std_logic;
-    signal id_ex_ctrl_Branch: std_logic;
-    signal id_ex_ctrl_AluOp: std_logic_vector(2 downto 0);
+    signal id_ex_ctrl_RegDst          : std_logic;
+    signal id_ex_ctrl_ALUSrc          : std_logic;
+    signal id_ex_ctrl_MemtoReg        : std_logic;
+    signal id_ex_ctrl_RegWrite        : std_logic;
+    signal id_ex_ctrl_MemRead         : std_logic;
+    signal id_ex_ctrl_MemWrite        : std_logic;
+    signal id_ex_ctrl_Branch          : std_logic;
+    signal id_ex_ctrl_AluOp           : std_logic_vector(2 downto 0);
     
-    signal id_ex_pc_4: std_logic_vector(31 downto 0);
-    signal id_ex_regA: std_logic_vector(31 downto 0);
-    signal id_ex_regB: std_logic_vector(31 downto 0);
-    signal id_ex_dataInm: std_logic_vector(31 downto 0);
-    signal id_ex_regD_lw: std_logic_vector(4 downto 0);
-    signal id_ex_regD_tr: std_logic_vector(4 downto 0);
+    signal id_ex_pc_4                 : std_logic_vector(31 downto 0);
+    signal id_ex_regA                 : std_logic_vector(31 downto 0);
+    signal id_ex_regB                 : std_logic_vector(31 downto 0);
+    signal id_ex_dataInm              : std_logic_vector(31 downto 0);
+    signal id_ex_regD_lw              : std_logic_vector(4 downto 0);
+    signal id_ex_regD_tr              : std_logic_vector(4 downto 0);
     --Fin Reg segmentacion
     
     --EX/MEM Reg segmentacion
-    signal ex_mem_ctrl_RegWrite: std_logic;
-    signal ex_mem_ctrl_MemRead: std_logic;
-    signal ex_mem_ctrl_MemWrite: std_logic;
-    signal ex_mem_ctrl_Branch: std_logic;   
-    signal ex_mem_ctrl_Zero: std_logic;
-    signal ex_mem_ctrl_MemToReg: std_logic;
+    signal ex_mem_ctrl_RegWrite       : std_logic;
+    signal ex_mem_ctrl_MemRead        : std_logic;
+    signal ex_mem_ctrl_MemWrite       : std_logic;
+    signal ex_mem_ctrl_Branch         : std_logic;   
+    signal ex_mem_ctrl_Zero           : std_logic;
+    signal ex_mem_ctrl_MemToReg       : std_logic;
     
-    signal ex_mem_branch, ex_mem_alu_out, ex_mem_wr_data: std_logic_vector(31 downto 0);
-    signal ex_mem_wr_reg: std_logic_vector(4 downto 0);
+    signal ex_mem_branch, ex_mem_alu_out, ex_mem_wr_data          : std_logic_vector(31 downto 0);
+    signal ex_mem_wr_reg                                          : std_logic_vector(4 downto 0);
     --Fin Reg segmentacion
     
     
     --Seniales Tercera Etapa    
     component ALU
     port(
-        a : in STD_LOGIC_VECTOR (31 downto 0);
-        b : in STD_LOGIC_VECTOR (31 downto 0);
-        control : in STD_LOGIC_VECTOR (2 downto 0);
-        result : out STD_LOGIC_VECTOR(31 downto 0);
-        zero : out STD_LOGIC
+        a               : in STD_LOGIC_VECTOR (31 downto 0);
+        b               : in STD_LOGIC_VECTOR (31 downto 0);
+        control         : in STD_LOGIC_VECTOR (2 downto 0);
+        result          : out STD_LOGIC_VECTOR(31 downto 0);
+        zero            : out STD_LOGIC
         );
     end component;
 	
 	--Seniales de la ALU
-	signal ex_ALU_result : std_logic_vector(31 downto 0);
-	signal ex_ALU_control : std_logic_vector(2 downto 0);
-	signal ex_ALU_zero : std_logic;
+	signal ex_ALU_result              : std_logic_vector(31 downto 0);
+	signal ex_ALU_control             : std_logic_vector(2 downto 0);
+	signal ex_ALU_zero                : std_logic;
 	--Fin seniales de la ALU
+	
     --Add branch
-    signal ex_add_branch: std_Logic_vector(31 downto 0);
-    signal ex_mux_reg_out: std_logic_vector(4 downto 0);
+    signal ex_add_branch              : std_Logic_vector(31 downto 0);
+    signal ex_mux_reg_out             : std_logic_vector(4 downto 0);
     --Fin add branch
     
     --Mux ALU
-    signal ex_mux_alu_out: std_logic_vector(31 downto 0);
+    signal ex_mux_alu_out             : std_logic_vector(31 downto 0);
     --Fin Mux ALU
     
     
     --Seniales Cuarta Etapa
     
     --MEM/WB Reg Seg
-    signal mem_wb_ctrl_RegWrite: std_logic;
-    signal mem_wb_ctrl_MemToReg: std_logic;
+    signal mem_wb_ctrl_RegWrite       : std_logic;
+    signal mem_wb_ctrl_MemToReg       : std_logic;
     
-    signal mem_wb_data_out: std_logic_vector(31 downto 0);
-    signal mem_wb_alu_out: std_logic_vector(31 downto 0);
-    signal mem_wb_wr_reg: std_logic_vector(4 downto 0);
+    signal mem_wb_data_out            : std_logic_vector(31 downto 0);
+    signal mem_wb_alu_out             : std_logic_vector(31 downto 0);
+    signal mem_wb_wr_reg              : std_logic_vector(4 downto 0);
     
 begin
     --Instanciacion banco de registros
