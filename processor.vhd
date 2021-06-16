@@ -36,9 +36,11 @@ architecture processor_arq of processor is
     --Seniales del banco de registro de ID
     signal id_breg_data_wr                      : std_logic_vector(31 downto 0);
     signal id_breg_data1_rd, id_breg_data2_rd   : std_logic_vector(31 downto 0);
-	--Fin seniales del banco de registro
-	
-	
+    --Fin seniales del banco de registro
+    
+
+    --Seniales Primera Etapa
+
     signal if_pc_out         : std_logic_vector(31 downto 0);   --Salida PC
     
     signal if_pc_4           : std_logic_vector(31 downto 0);   --Salida Adder
@@ -48,7 +50,10 @@ architecture processor_arq of processor is
     
     signal if_id_pc_4_out    : std_logic_vector(31 downto 0);   --Salida registro segmentacion para Adder
     signal if_id_inst_out    : std_logic_vector(31 downto 0);   --Salida registro segmentacion para Instrucc mem
-    
+
+
+    --Seniales Segunda Etapa
+
     --Seniales Unidad de Control
     signal RegDst            : std_logic;
     signal ALUSrc            : std_logic;
@@ -146,10 +151,10 @@ begin
             data1_rd => id_breg_data1_rd,
             data2_rd => id_breg_data2_rd
             );
-     --Fin instanciacion banco registros
+    --Fin instanciacion banco registros
      
      
-     --Instanciacion ALU
+    --Instanciacion ALU
     ALU_inst : ALU
     port map(
             a => id_ex_regA,            --Operando A = salida reg segmentación
@@ -158,16 +163,16 @@ begin
             result => ex_ALU_result,
             zero => ex_ALU_zero
             );
-     --Fin instanciacion ALU
+    --Fin instanciacion ALU
 
 
-	--Primera Etapa
+    --Primera Etapa
     
     I_Addr <= if_pc_out;
     I_RdStb <= '1';
     
 	
-	--PC
+    --PC
     Reg_pc: process(Clk, Reset)
     begin
     	if (Reset = '1') then
@@ -256,7 +261,7 @@ begin
                  MemRead <= '0';
                  MemWrite <= '0';
                  Branch <= '0';
-                 AluOp <= "011";  --Chequear desp
+                 AluOp <= "011";  
             when "001100" => --Operacion andi
                  RegDst <= '0';
                  ALUSrc <= '1';
@@ -265,7 +270,7 @@ begin
                  MemRead <= '0';
                  MemWrite <= '0';
                  Branch <= '0';
-                 AluOp <= "100"; --Chequear desp
+                 AluOp <= "100"; 
             when "001101" => --Operacion ori
                  RegDst <= '0';
                  ALUSrc <= '1';
@@ -274,7 +279,7 @@ begin
                  MemRead <= '0';
                  MemWrite <= '0';
                  Branch <= '0';
-                 AluOp <= "101"; --Chequear desp
+                 AluOp <= "101"; 
             when "001111" => --Operacion lui
                  RegDst <= '0';
                  ALUSrc <= '1';
@@ -283,7 +288,7 @@ begin
                  MemRead <= '0';
                  MemWrite <= '0';
                  Branch <= '0';
-                 AluOp <= "110"; --Chequear desp
+                 AluOp <= "110"; 
             when others => --Para cualquier otro caso, todo en 0
                  RegDst <= '0';
                  ALUSrc <= '0';
@@ -299,10 +304,10 @@ begin
     --Extension de Signo
     ID_sign_extended: process(if_id_inst_out)
     begin
-        if (if_id_inst_out(15) = '0') then      --Si es positivo
-            id_sign_ext_out <= x"0000" & if_id_inst_out(15 downto 0);   --Extiende con 0 al inicio
-        elsif (if_id_inst_out(15) = '1') then   --Si es negativo
-            id_sign_ext_out <= x"1111" & if_id_inst_out(15 downto 0);   --Extiende con 1 al inicio
+        if (if_id_inst_out(15) = '0') then      			--Si es positivo
+            id_sign_ext_out <= x"0000" & if_id_inst_out(15 downto 0);   	--Extiende con 0 al inicio
+        elsif (if_id_inst_out(15) = '1') then   			--Si es negativo
+            id_sign_ext_out <= x"1111" & if_id_inst_out(15 downto 0);   	--Extiende con 1 al inicio
         end if;
     end process;
     
@@ -398,9 +403,9 @@ begin
     EX_Mux_alu: process (id_ex_ctrl_ALUSrc, id_ex_regB, id_ex_dataInm)
     begin
         if(id_ex_ctrl_ALUSrc = '0') then                   --Si selector = 0
-            ex_mux_alu_out <= id_ex_regB;            --toma el valor de RegB de Banco de Registros
+            ex_mux_alu_out <= id_ex_regB;            		--toma el valor de RegB de Banco de Registros
         elsif(id_ex_ctrl_ALUSrc = '1') then                --Si selector = 1
-            ex_mux_alu_out <= id_ex_dataInm;         --toma el valor del inmediato
+            ex_mux_alu_out <= id_ex_dataInm;         		--toma el valor del inmediato
         end if;
     end process;    
     
@@ -414,9 +419,9 @@ begin
     EX_Mux_wr_register: process (id_ex_ctrl_RegDst, id_ex_regD_lw, id_ex_regD_tr)
     begin
         if(id_ex_ctrl_RegDst = '0') then                   --Si selector = 0
-            ex_mux_reg_out <= id_ex_regD_lw;            --toma el valor de instrucc(20 to 16)
+            ex_mux_reg_out <= id_ex_regD_lw;            	--toma el valor de instrucc(20 to 16)
         elsif(id_ex_ctrl_RegDst = '1') then                --Si selector = 1
-            ex_mux_reg_out <= id_ex_regD_tr;            --toma el valor de instrucc(15 to 11)
+            ex_mux_reg_out <= id_ex_regD_tr;            	--toma el valor de instrucc(15 to 11)
         end if;
     end process;
     
