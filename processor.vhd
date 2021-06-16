@@ -106,11 +106,11 @@ architecture processor_arq of processor is
         );
     end component;
 	
-	--Seniales de la ALU
-	signal ex_ALU_result              : std_logic_vector(31 downto 0);
-	signal ex_ALU_control             : std_logic_vector(2 downto 0);
-	signal ex_ALU_zero                : std_logic;
-	--Fin seniales de la ALU
+    --Seniales de la ALU
+    signal ex_ALU_result              : std_logic_vector(31 downto 0);
+    signal ex_ALU_control             : std_logic_vector(2 downto 0);
+    signal ex_ALU_zero                : std_logic;
+    --Fin seniales de la ALU
 	
     --Add branch
     signal ex_add_branch              : std_Logic_vector(31 downto 0);
